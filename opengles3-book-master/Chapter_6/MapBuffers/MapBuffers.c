@@ -119,7 +119,9 @@ void DrawPrimitiveWithVBOsMapBuffers(ESContext *esContext,
     if (userData->vboIds[0] == 0 && userData->vboIds[1] == 0) {
         GLfloat * vtxMappedBuf;
         GLushort * idxMappedBuf;
-        gl
+        
+        glGenBuffers(<#GLsizei n#>, <#GLuint *buffers#>)
+        
     }
 }
 

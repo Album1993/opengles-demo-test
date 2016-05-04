@@ -37,84 +37,97 @@
 #include <stdlib.h>
 #include <math.h>
 #include "esUtil.h"
+#include <stdio.h>
+
 
 #ifdef _WIN32
 #define srandom srand
 #define random rand
 #endif
 
-
-#define NUM_INSTANCES   100
+#define NUM_INSTANCE    100
 #define POSITION_LOC    0
 #define COLOR_LOC       1
 #define MVP_LOC         2
 
 typedef struct
 {
-   // Handle to a program object
-   GLuint programObject;
-
-   // VBOs
-   GLuint positionVBO;
-   GLuint colorVBO;
-   GLuint mvpVBO;
-   GLuint indicesIBO;
-
-   // Number of indices
-   int       numIndices;
-
-   // Rotation angle
-   GLfloat   angle[NUM_INSTANCES];
-
+    GLuint programObject;
+    
+    GLuint positionVBO;
+    GLuint colorVBO;
+    GLuint mvpVBO;
+    GLuint indicesIBO;
+    
+    int numIndices;
+    
+    GLfloat angle[NUM_INSTANCE];
+    
 } UserData;
 
-///
-int Init(ESContext * esContext) {
+char * ReadFile (char * filename)
+{
+    char * buffer;
+    long stringSize,readSize;
+    FILE * handler;
+    handler = fopen(filename, "r");
+    
+    {
+        fseek(handler, 0, SEEK_END);
+        stringSize = ftell(handler);
+        
+        rewind(handler);
+        
+        buffer = (char *)malloc(sizeof(char) * (stringSize + 1));
+        readSize = fread(buffer, sizeof(char), stringSize, handler);
+        if (stringSize !=  readSize) {
+            free(buffer);
+            buffer = NULL;
+        }
+    }
+  
+    return buffer;
+}
+
+
+int Init (ESContext * esContext)
+{
     GLfloat * positions;
     GLuint * indices;
     
     UserData * userData = esContext->userData;
-    const char vShaderStr[] =
-    "#version 300 es                                \n"
-    "layout(location = 0) in vec4 a_position;       \n"
-    "layout(location = 1) in vec4 a_color;          \n"
-    "layout(location = 2) in mat4 a_mvpMatrix;      \n"
-    "out vec4 v_color;                              \n"
-    "void main()                                    \n"
-    "{                                              \n"
-    "   v_color = a_color;                          \n"
-    "   gl_position = a_mvpMatrix * a_position;     \n"
-    "}                                              \n";
-    const char fShaderStr[] =
-    "#version 300 es                                \n"
-    "precision mediump float;                       \n"
-    "in vec4 v_color;                               \n"
-    "layout(location = 0) out vec4 outColor;        \n"
-    "void main()                                    \n"
-    "{                                              \n"
-    "   outColor = v_color;                         \n"
-    "}                                              \n";
+    
+    const char * vShaderStr = ReadFile("/Users/jiangchenrui/opengl-es-practise/opengles3-book-master/Chapter_7/Instancing/iOS/Instancing/Instancing/Shade.vsh");
+    
+    const char * fShaderStr = ReadFile("/Users/jiangchenrui/opengl-es-practise/opengles3-book-master/Chapter_7/Instancing/iOS/Instancing/Instancing/Shade.fsh");
     
     userData->programObject = esLoadProgram(vShaderStr, fShaderStr);
+    
     userData->numIndices = esGenCube(0.1f, &positions, NULL, NULL, &indices);
     
     glGenBuffers(1, &userData->indicesIBO);
+    
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, userData->indicesIBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * userData->numIndices, indices, GL_STATIC_DRAW);
+    
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     free(indices);
     
     glGenBuffers(1, &userData->positionVBO);
+    
     glBindBuffer(GL_ARRAY_BUFFER, userData->positionVBO);
+    
     glBufferData(GL_ARRAY_BUFFER, 24 * sizeof(GLfloat) * 3, positions, GL_STATIC_DRAW);
+    
     free(positions);
     
     {
-        GLubyte colors[NUM_INSTANCES][4];
+        GLubyte colors[NUM_INSTANCE][4];
         int instance;
         
         srandom(0);
-        for (instance = 0; instance < NUM_INSTANCES; instance) {
+        
+        for (instance = 0; instance < NUM_INSTANCE; instance ++) {
             colors[instance][0] = random() % 255;
             colors[instance][1] = random() % 255;
             colors[instance][2] = random() % 255;
@@ -123,80 +136,97 @@ int Init(ESContext * esContext) {
         
         glGenBuffers(1, &userData->colorVBO);
         glBindBuffer(GL_ARRAY_BUFFER, userData->colorVBO);
-        glBufferData(GL_ARRAY_BUFFER, NUM_INSTANCES * 4, colors, GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, NUM_INSTANCE * 4, colors, GL_STATIC_DRAW);
+        
     }
-    
     {
         int instance;
-        
-        for (instance = 0; instance < NUM_INSTANCES; instance ++) {
-            userData->angle[instance] = (float)(random() * 32768) / 32767.0f * 360.0f;
+        for (instance = 0; instance < NUM_INSTANCE; instance ++) {
+            userData->angle[instance] = (float) (random() % 32768) / 32767.0f * 360.f;
         }
-        
         glGenBuffers(1, &userData->mvpVBO);
+        
         glBindBuffer(GL_ARRAY_BUFFER, userData->mvpVBO);
-        glBufferData(GL_ARRAY_BUFFER, NUM_INSTANCES * sizeof(ESMatrix), NULL, GL_DYNAMIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, NUM_INSTANCE * sizeof(ESMatrix), NULL, GL_DYNAMIC_DRAW);
+        
     }
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
-    return GL_TRUE;
     
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glClearColor(1.0f,1.0f , 1.0f, 0.0f);
+    return GL_TRUE;
 }
 
-void Update(ESContext * esContext) {
+
+void Updata (ESContext * esContext,float deltaTime) {
     UserData * userData = (UserData *)esContext->userData;
-    ESMatrix * matrixBuf;
-    ESMatrix  perspective;
+    ESMatrix *matrixBuf;
+    ESMatrix perspective;
+    
     float aspect;
     int instance = 0;
     int numRows;
-    int numColums;
-    aspect = (GLfloat)esContext->width / (GLfloat) esContext->height;
+    int numColumns;
+    
+    aspect = (GLfloat)esContext->width/(GLfloat)esContext->height;
     esMatrixLoadIdentity(&perspective);
     esPerspective(&perspective, 60.0f, aspect, 1.0f, 20.0f);
+    
     glBindBuffer(GL_ARRAY_BUFFER, userData->mvpVBO);
-    matrixBuf = (ESMatrix *)glMapBufferRange(GL_ARRAY_BUFFER, 0, sizeof(ESMatrix)* NUM_INSTANCES, GL_MAP_WRITE_BIT);
-    numRows = (int)sqrt(NUM_INSTANCES);
-    numColums = numRows;
-    for (instance = 0; instance < NUM_INSTANCES; instance ++) {
+    
+    matrixBuf = (ESMatrix *)glMapBufferRange(GL_ARRAY_BUFFER, 0, sizeof(ESMatrix) * NUM_INSTANCE, GL_MAP_WRITE_BIT);
+    
+    numRows = (int) sqrt(NUM_INSTANCE);
+    
+    numColumns = numRows;
+    
+    for (instance = 0; instance < NUM_INSTANCE; instance ++) {
         ESMatrix modelview;
         float translateX = ((float) (instance % numRows) / (float)numRows) * 2.0f - 1.0f;
-        float translateY = ((float) (instance / numColums) / (float)numColums) * 2.0f - 1.0f;
-        esma
+        float translateY = ((float) (instance / numColumns)/(float)numColumns) * 2.0f - 1.0f;
+        
+        esMatrixLoadIdentity(&modelview);
+        
+        esTranslate(&modelview, translateX, translateY, -2.0f);
+        
+        userData->angle[instance] += (deltaTime * 40.0f);
+        
+        if (userData->angle[instance] > 360.0f) {
+            userData->angle[instance] -= 360.f;
+        }
+        
+        esRotate(&modelview, userData->angle[instance], 1.0, 0.0f, 1.0);
+        
+        esMatrixMultiply(&matrixBuf[instance], &modelview, &perspective);
+        
     }
-}
-///
-// Cleanup
-//
-void Shutdown ( ESContext *esContext )
-{
-   UserData *userData = esContext->userData;
-
-   glDeleteBuffers ( 1, &userData->positionVBO );
-   glDeleteBuffers ( 1, &userData->colorVBO );
-   glDeleteBuffers ( 1, &userData->mvpVBO );
-   glDeleteBuffers ( 1, &userData->indicesIBO );
-
-   // Delete program object
-   glDeleteProgram ( userData->programObject );
+    
+    glUnmapBuffer(GL_ARRAY_BUFFER);
+    
+    
 }
 
 
-int esMain ( ESContext *esContext )
-{
-   esContext->userData = malloc ( sizeof ( UserData ) );
 
-   esCreateWindow ( esContext, "Instancing", 640, 480, ES_WINDOW_RGB | ES_WINDOW_DEPTH );
 
-   if ( !Init ( esContext ) )
-   {
-      return GL_FALSE;
-   }
 
-   esRegisterShutdownFunc ( esContext, Shutdown );
-   esRegisterUpdateFunc ( esContext, Update );
-   esRegisterDrawFunc ( esContext, Draw );
 
-   return GL_TRUE;
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
