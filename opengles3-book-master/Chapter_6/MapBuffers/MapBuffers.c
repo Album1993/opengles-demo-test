@@ -52,36 +52,19 @@ typedef struct
 #define VERTEX_POS_INDX       0
 #define VERTEX_COLOR_INDX     1
 
-//char * ReadFile(char * filename) {
-//    char * buffer = NULL;
-//    int string_size ,read_size;
-//    FILE * handler = fopen(filename, "r");
-//    if (handler) {
-//        fseek(handler, 0, SEEK_END);
-//        string_size = ftell(handler);
-//        rewind(handler);
-//        buffer = (char *)malloc(sizeof(char) * (string_size + 1));
-//        read_size = fread(buffer, sizeof(char), string_size, handler);
-//        buffer[string_size + 1] = '\0';
-//        if (string_size != read_size) {
-//            free(buffer);
-//            buffer = NULL;
-//        }
-//    }
-//    return buffer;
-//}
-
-
 char * ReadFile (char * filename) {
     char * buffer = NULL;
     long string_size,read_size;
-    FILE * handler = fopen(filename, "r");
+    FILE * handler;
+    handler = fopen(filename, "r");
     if (handler) {
         fseek(handler, 0, SEEK_END);
         string_size = ftell(handler);
         rewind(handler);
+        buffer = (char *)malloc(string_size + 1);
         read_size = fread(buffer, sizeof(char), string_size, handler);
-        if (read_size != string_size) {
+        buffer[string_size + 1] = '\0';
+        if (string_size != read_size) {
             free(buffer);
             buffer = NULL;
         }
@@ -89,43 +72,57 @@ char * ReadFile (char * filename) {
     return buffer;
 }
 
-int Init (ESContext * esContext)
-{
-    UserData * userData = esContext->userData;
-    const char * vShaderStr = ReadFile("/Users/jiangchenrui/Desktop/opengles3-book-master/Chapter_6/MapBuffers/iOS/MapBuffers/MapBuffers/Shader.vsh");
-    const char * fShaderStr = ReadFile("/Users/jiangchenrui/Desktop/opengles3-book-master/Chapter_6/MapBuffers/iOS/MapBuffers/MapBuffers/Shader.fsh");
+int Init (ESContext * esContext) {
     
-    GLuint programObject = esLoadProgram(vShaderStr, fShaderStr);
+    UserData * userData = esContext->userData;
+    const char * vShaderStr = ReadFile("/Users/album/Documents/git/opengles-demo-test/opengles3-book-master/Chapter_6/MapBuffers/iOS/MapBuffers/MapBuffers/Shader.vsh");
+    const char * fShaderStr = ReadFile("/Users/album/Documents/git/opengles-demo-test/opengles3-book-master/Chapter_6/MapBuffers/iOS/MapBuffers/MapBuffers/Shader.fsh");
+    
+    GLuint programObject;
+    
+    programObject = esLoadProgram(vShaderStr, fShaderStr);
+    
     if (programObject == 0) {
         return GL_FALSE;
     }
-    
+
     userData->programObject = programObject;
     userData->vboIds[0] = 0;
     userData->vboIds[1] = 0;
+    
     glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
+    
     return GL_TRUE;
+    
 }
 
-
-void DrawPrimitiveWithVBOsMapBuffers(ESContext *esContext,
-                                     GLint numVertices,
-                                     GLfloat * vtxBuf,
-                                     GLint vtxStride,
-                                     GLint numIndices,
-                                     GLushort * indices) {
+void DrawPrimitiveWithVBOsMapBuffers (ESContext * esContext,
+                                                GLuint numVertices,
+                                                GLfloat * vtxBuf,
+                                                GLint vtxStride,
+                                                GLint numIndices,
+                                                GLushort * indices) {
     UserData * userData = esContext->userData;
     GLuint offset = 0;
+    
     if (userData->vboIds[0] == 0 && userData->vboIds[1] == 0) {
         GLfloat * vtxMappedBuf;
         GLushort * idxMappedBuf;
-        gl
+        
+        glGenBuffers(2, userData->vboIds);
+        glBindBuffer(GL_ARRAY_BUFFER, userData->vboIds[0]);
+        glBufferData(GL_ARRAY_BUFFER, vtxStride * numVertices, NULL, GL_STATIC_DRAW);
+        
+        vtxMappedBuf = (GLfloat *)glMapBufferRange(GL_ARRAY_BUFFER, 0, vtxStride * numVertices, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+        if ( vtxMappedBuf == NULL) {
+            esLogMessage("error unmapping array buffer object");
+            return;
+        }
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, userData->vboIds[1]);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLushort) * numIndices, NULL, GL_STATIC_DRAW);
+        
     }
 }
-
-
-
-
 
 
 
