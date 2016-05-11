@@ -62,155 +62,252 @@ typedef struct
     int numIndices;
     
     GLfloat angle[NUM_INSTANCE];
-    
 } UserData;
 
-char * ReadFile (char * filename)
-{
-    char * buffer;
-    long stringSize,readSize;
-    FILE * handler;
-    handler = fopen(filename, "r");
+char * ReadFile (char * fileName) {
     
-    {
-        fseek(handler, 0, SEEK_END);
-        stringSize = ftell(handler);
-        
-        rewind(handler);
-        
-        buffer = (char *)malloc(sizeof(char) * (stringSize + 1));
-        readSize = fread(buffer, sizeof(char), stringSize, handler);
-        if (stringSize !=  readSize) {
-            free(buffer);
-            buffer = NULL;
-        }
+    char * buffer;
+    
+    long string_size,read_size;
+    
+    FILE * handler;
+    
+    handler = fopen(fileName, "r");
+    
+    if (handler == 0) {
+        return NULL;
     }
-  
+    
+    fseek(handler, 0, SEEK_END);
+    
+    string_size = ftell(handler);
+    
+    rewind(handler);
+    
+    buffer = malloc(sizeof(char) * (string_size + 1));
+    
+    read_size = fread(buffer, 1, string_size, handler);
+    
+    buffer[string_size + 1] = '\0';
+    
+    if (string_size != read_size) {
+        
+        buffer = NULL;
+        
+        free(buffer);
+        
+    }
+    
     return buffer;
+    
 }
 
-
-int Init (ESContext * esContext)
-{
+int Init (ESContext * esContext) {
+    
     GLfloat * positions;
     GLuint * indices;
     
-    UserData * userData = esContext->userData;
+    UserData *userDate = esContext->userData;
+    const char * vShaderStr = ReadFile("/Users/jiangchenrui/opengl-es-practise/opengles3-book-master/Chapter_7/Instancing/iOS/Instancing/Instancing/Shader.vsh");
+    const char * fShaderStr = ReadFile("/Users/jiangchenrui/opengl-es-practise/opengles3-book-master/Chapter_7/Instancing/iOS/Instancing/Instancing/Shader.fsh");
     
-    const char * vShaderStr = ReadFile("/Users/jiangchenrui/opengl-es-practise/opengles3-book-master/Chapter_7/Instancing/iOS/Instancing/Instancing/Shade.vsh");
+    userDate->programObject = esLoadProgram(vShaderStr, fShaderStr);
     
-    const char * fShaderStr = ReadFile("/Users/jiangchenrui/opengl-es-practise/opengles3-book-master/Chapter_7/Instancing/iOS/Instancing/Instancing/Shade.fsh");
+    userDate->numIndices = esGenCube(0.1, &positions, NULL, NULL, &indices);
     
-    userData->programObject = esLoadProgram(vShaderStr, fShaderStr);
+    glGenBuffers(1, &userDate->indicesIBO);
     
-    userData->numIndices = esGenCube(0.1f, &positions, NULL, NULL, &indices);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, userDate->indicesIBO);
     
-    glGenBuffers(1, &userData->indicesIBO);
-    
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, userData->indicesIBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * userData->numIndices, indices, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLfloat) * userDate->numIndices, indices, GL_STATIC_DRAW);
     
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    
     free(indices);
     
-    glGenBuffers(1, &userData->positionVBO);
+    glGenBuffers(1, &userDate->positionVBO);
     
-    glBindBuffer(GL_ARRAY_BUFFER, userData->positionVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, userDate->positionVBO);
     
-    glBufferData(GL_ARRAY_BUFFER, 24 * sizeof(GLfloat) * 3, positions, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * NUM_INSTANCE * 4, positions, GL_STATIC_DRAW);
     
     free(positions);
     
     {
-        GLubyte colors[NUM_INSTANCE][4];
+        
         int instance;
         
-        srandom(0);
+        GLubyte color[NUM_INSTANCE][4] ;
+        
+        srand(0);
         
         for (instance = 0; instance < NUM_INSTANCE; instance ++) {
-            colors[instance][0] = random() % 255;
-            colors[instance][1] = random() % 255;
-            colors[instance][2] = random() % 255;
-            colors[instance][3] = 0;
+            
+            color[instance][0] = random() % 255;
+            color[instance][1] = random() % 255;
+            color[instance][2] = random() % 255;
+            color[instance][3] = 0;
+            
         }
         
-        glGenBuffers(1, &userData->colorVBO);
-        glBindBuffer(GL_ARRAY_BUFFER, userData->colorVBO);
-        glBufferData(GL_ARRAY_BUFFER, NUM_INSTANCE * 4, colors, GL_STATIC_DRAW);
+        glGenBuffers(1, &userDate->colorVBO);
+        
+        glBindBuffer(GL_ARRAY_BUFFER, userDate->colorVBO);
+        
+        glBufferData(GL_ARRAY_BUFFER, sizeof(GLubyte) * 4 * NUM_INSTANCE, color, GL_STATIC_DRAW);
         
     }
+    
     {
-        int instance;
-        for (instance = 0; instance < NUM_INSTANCE; instance ++) {
-            userData->angle[instance] = (float) (random() % 32768) / 32767.0f * 360.f;
-        }
-        glGenBuffers(1, &userData->mvpVBO);
+        int instance ;
         
-        glBindBuffer(GL_ARRAY_BUFFER, userData->mvpVBO);
-        glBufferData(GL_ARRAY_BUFFER, NUM_INSTANCE * sizeof(ESMatrix), NULL, GL_DYNAMIC_DRAW);
+        for (instance = 0; instance < NUM_INSTANCE; instance++) {
+            userDate->angle[instance] = (GLfloat)(random() % 32768) / 32767.0f * 360.0f;
+        }
+        
+        glGenBuffers(1, &userDate->mvpVBO);
+        
+        glBindBuffer(GL_ARRAY_BUFFER, userDate->mvpVBO);
+        
+        glBufferData(GL_ARRAY_BUFFER, sizeof(ESMatrix) * NUM_INSTANCE, userDate->angle, GL_DYNAMIC_DRAW);
         
     }
     
     glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glClearColor(1.0f,1.0f , 1.0f, 0.0f);
+    
+    glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
+    
     return GL_TRUE;
+    
 }
 
-
-void Updata (ESContext * esContext,float deltaTime) {
+void Update (ESContext * esContext,float deltaTime) {
+    
     UserData * userData = (UserData *)esContext->userData;
-    ESMatrix *matrixBuf;
+    
+    ESMatrix * matrixBuf = NULL ;
+    
     ESMatrix perspective;
     
     float aspect;
-    int instance = 0;
+    
     int numRows;
+    
     int numColumns;
     
-    aspect = (GLfloat)esContext->width/(GLfloat)esContext->height;
+    int instances = 0;
+    
+    aspect = (float) esContext->width / (float) esContext->height;
+    
     esMatrixLoadIdentity(&perspective);
+    
     esPerspective(&perspective, 60.0f, aspect, 1.0f, 20.0f);
     
     glBindBuffer(GL_ARRAY_BUFFER, userData->mvpVBO);
     
-    matrixBuf = (ESMatrix *)glMapBufferRange(GL_ARRAY_BUFFER, 0, sizeof(ESMatrix) * NUM_INSTANCE, GL_MAP_WRITE_BIT);
+    matrixBuf = glMapBufferRange(GL_ARRAY_BUFFER, 0, sizeof(ESMatrix) * NUM_INSTANCE, GL_MAP_WRITE_BIT);
     
-    numRows = (int) sqrt(NUM_INSTANCE);
+    numRows = (int)sqrtf(NUM_INSTANCE);
     
-    numColumns = numRows;
+    numColumns = NUM_INSTANCE / numRows;
     
-    for (instance = 0; instance < NUM_INSTANCE; instance ++) {
-        ESMatrix modelview;
-        float translateX = ((float) (instance % numRows) / (float)numRows) * 2.0f - 1.0f;
-        float translateY = ((float) (instance / numColumns)/(float)numColumns) * 2.0f - 1.0f;
+    for (instances = 0; instances < NUM_INSTANCE; instances++) {
+        
+        float translateX = ( ( float ) ( instances % numRows ) / ( float ) numRows ) * 2.0f - 1.0f;
+        float translateY = ( ( float ) ( instances / numColumns ) / ( float ) numColumns ) * 2.0f - 1.0f;
+        
+        ESMatrix modelview ;
         
         esMatrixLoadIdentity(&modelview);
         
         esTranslate(&modelview, translateX, translateY, -2.0f);
         
-        userData->angle[instance] += (deltaTime * 40.0f);
+        userData->angle[instances] += (deltaTime * 40.0f);
         
-        if (userData->angle[instance] > 360.0f) {
-            userData->angle[instance] -= 360.f;
+        if (userData->angle[instances] > 360.0f) {
+            userData->angle[instances] -= 360.0f;
         }
         
-        esRotate(&modelview, userData->angle[instance], 1.0, 0.0f, 1.0);
+        esRotate(&modelview, userData->angle[instances], 1.0f, 0.0f, 1.0f);
         
-        esMatrixMultiply(&matrixBuf[instance], &modelview, &perspective);
-        
+        esMatrixMultiply(&matrixBuf[instances], &modelview, &perspective);
     }
     
     glUnmapBuffer(GL_ARRAY_BUFFER);
     
+}
+
+void Draw(ESContext * esContext) {
+    UserData * userData = esContext->userData;
+    
+    glViewport(0, 0, esContext->width, esContext->height);
+    
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BITS);
+    
+    glUseProgram(userData->programObject);
+    
+    glBindBuffer(GL_ARRAY_BUFFER, userData->positionVBO);
+    
+    glVertexAttribPointer(POSITION_LOC,
+                          3,
+                          GL_FLOAT,
+                          GL_FALSE,
+                          3,
+                          (const void *)NULL);
+    
+    glEnableVertexAttribArray(POSITION_LOC);
+    
+    glBindBuffer(GL_ARRAY_BUFFER, userData->colorVBO);
+    
+    glVertexAttribPointer(COLOR_LOC, 4, GL_UNSIGNED_BYTE, GL_TRUE, 4 * sizeof(GLubyte), (const void *) NULL);
+    
+    glEnableVertexAttribArray(COLOR_LOC);
+    
+    glBindBuffer(GL_ARRAY_BUFFER, userData->mvpVBO);
     
 }
 
+void Shutdown (ESContext * esContext) {
+    
+    UserData * userdata = esContext->userData;
+    
+    glDeleteBuffers(1, &userdata->positionVBO);
+    
+    glDeleteBuffers(1, &userdata->colorVBO);
+    
+    glDeleteBuffers(1, &userdata->mvpVBO);
+    
+    glDeleteBuffers(1, &userdata->indicesIBO);
+    
+    glDeleteProgram(userdata->programObject);
+    
+}
 
-
-
-
-
-
+int esMain(ESContext * esContext) {
+    
+    esContext->userData = malloc(sizeof(UserData));
+    
+    esCreateWindow(esContext,
+                   "instancing",
+                   640,
+                   480,
+                   ES_WINDOW_RGB | ES_WINDOW_DEPTH);
+    
+    if (!Init(esContext)) {
+        
+        return GL_FALSE;
+        
+    }
+    
+    esRegisterShutdownFunc(esContext, Shutdown);
+    
+    esRegisterUpdateFunc(esContext, Update);
+    
+    esRegisterDrawFunc(esContext, Draw);
+    
+    return GL_TRUE;
+    
+}
 
 
 
