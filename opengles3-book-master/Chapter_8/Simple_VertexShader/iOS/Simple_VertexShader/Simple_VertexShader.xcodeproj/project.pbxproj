@@ -30,6 +30,8 @@
 		7667E33A17F2610D005D5823 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 7667E33217F2610D005D5823 /* main.m */; };
 		7667E33B17F2610D005D5823 /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 7667E33417F2610D005D5823 /* ViewController.m */; };
 		7667E33D17F26116005D5823 /* Simple_VertexShader.c in Sources */ = {isa = PBXBuildFile; fileRef = 7667E33C17F26116005D5823 /* Simple_VertexShader.c */; };
+		FCEE8CE01CE2DA450031F3C3 /* Shader.vsh in Resources */ = {isa = PBXBuildFile; fileRef = FCEE8CDF1CE2DA450031F3C3 /* Shader.vsh */; };
+		FCEE8CE21CE2DB4F0031F3C3 /* Shader.fsh in Resources */ = {isa = PBXBuildFile; fileRef = FCEE8CE11CE2DB4F0031F3C3 /* Shader.fsh */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -72,6 +74,8 @@
 		7667E33317F2610D005D5823 /* ViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ViewController.h; sourceTree = "<group>"; };
 		7667E33417F2610D005D5823 /* ViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ViewController.m; sourceTree = "<group>"; };
 		7667E33C17F26116005D5823 /* Simple_VertexShader.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = Simple_VertexShader.c; path = ../../../Simple_VertexShader.c; sourceTree = "<group>"; };
+		FCEE8CDF1CE2DA450031F3C3 /* Shader.vsh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.glsl; path = Shader.vsh; sourceTree = "<group>"; };
+		FCEE8CE11CE2DB4F0031F3C3 /* Shader.fsh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.glsl; path = Shader.fsh; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -145,6 +149,8 @@
 				7667DF3717F260CC005D5823 /* Main_iPad.storyboard */,
 				7667DF4117F260CC005D5823 /* Images.xcassets */,
 				7667DF2917F260CC005D5823 /* Supporting Files */,
+				FCEE8CDF1CE2DA450031F3C3 /* Shader.vsh */,
+				FCEE8CE11CE2DB4F0031F3C3 /* Shader.fsh */,
 			);
 			path = Simple_VertexShader;
 			sourceTree = "<group>";
@@ -268,10 +274,12 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FCEE8CE21CE2DB4F0031F3C3 /* Shader.fsh in Resources */,
 				7667DF3917F260CC005D5823 /* Main_iPad.storyboard in Resources */,
 				7667DF3617F260CC005D5823 /* Main_iPhone.storyboard in Resources */,
 				7667DF4217F260CC005D5823 /* Images.xcassets in Resources */,
 				7667DF2D17F260CC005D5823 /* InfoPlist.strings in Resources */,
+				FCEE8CE01CE2DA450031F3C3 /* Shader.vsh in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
