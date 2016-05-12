@@ -107,7 +107,7 @@ int Init (ESContext * esContext) {
     
     userData->mvpLoc = glGetUniformLocation(userData->programObject, "u_mvpMatrix");
     
-    userData->numIndices = esGenCube(1.0f, &userData->vertices, NULL, NULL, &userData->indices);
+    userData->numIndices = esGenCube(1.0, &userData->vertices, NULL, NULL, &userData->indices);
     
     userData->angle = 45.0f;
     
